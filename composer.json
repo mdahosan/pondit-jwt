@@ -1,10 +1,28 @@
 {
+  "name": "pondit/jwt",
+  "type": "library",
+  "description": "A simple library to encode and decode JSON Web Tokens (JWT) in PHP, conforming to RFC 7519.",
+  "keywords": [
+    "JSON Web Tokens (JWT) in PHP",
+    "PHP JWT",
+    "JWT",
+    "PHP",
+    "API Authentication"
+  ],
+  "license": "MIT",
+  "authors": [
+    {"name": "Md. Ahosan Habib", "email": "mdahosanhabib@outlook.com"}
+  ],
   "autoload":{
     "psr-4":{
       "Pondit\\":"src"
-    }
+    },
+    "files": [
+      "config/constants.php"
+    ]
   },
   "require": {
+    "php": "^7.2",
     "firebase/php-jwt": "^5.0",
     "swiftmailer/swiftmailer": "@stable"
   }
