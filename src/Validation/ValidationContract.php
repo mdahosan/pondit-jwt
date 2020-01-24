@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: Pondit
- * Date: 1/21/2020
- * Time: 4:28 PM
- */
 
 namespace Pondit\Validation;
 

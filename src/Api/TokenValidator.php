@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: Pondit
- * Date: 1/20/2020
- * Time: 5:51 PM
- */
 
 namespace Pondit\Api;
 
