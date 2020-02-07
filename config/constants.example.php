@@ -41,6 +41,7 @@ define('JWT_PROCESSING_ERROR',					300);
 define('ATHORIZATION_HEADER_NOT_FOUND',			301);
 define('ACCESS_TOKEN_ERRORS',					302);
 define('MAILGUN_ERROR',					        304);
+define('PDO_EXCEPTION',					        305);
 
 define('TOKEN_LIFE_TIME',					    3600); //number of min
 

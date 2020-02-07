@@ -7,29 +7,45 @@ use Pondit\Database\DB;
 use Pondit\Response\Responsable;
 use PDO;
 
-class Rest extends DB
+class Rest
 {
     use TokenValidator, Responsable;
 
     public $conn;
 
     public function __construct() {
-        if($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            $this->throwError(REQUEST_METHOD_NOT_VALID, 'Request Method is not valid.');
+        try {
+            $this->conn = new PDO('mysql:host=' .DB_HOST .';dbname=' . DB_NAME, DB_USERNAME, DB_PASSWORD);
+            $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+            if($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                $this->throwError(REQUEST_METHOD_NOT_VALID, 'Request Method is not valid.');
+            }
+
+            $handler = fopen('php://input', 'r');
+            $this->request = stream_get_contents($handler);
+            $this->validateRequest();
+            $this->validateToken();
+
+            return $this->conn;
+        } catch (\Exception $e) {
+            echo "Database Error: " . $e->getMessage();
         }
-        $handler = fopen('php://input', 'r');
-        $this->request = stream_get_contents($handler);
-        $this->conn = parent::__construct();
-        $this->validateRequest();
-        $this->validateToken();
+
     }
 
+    /**
+     * Request validation
+     */
     Public function validateRequest() {
         if($_SERVER['CONTENT_TYPE'] !== 'application/json') {
             $this->throwError(REQUEST_CONTENTTYPE_NOT_VALID, 'Request content type is not valid');
         }
     }
 
+    /**
+     * Bearer Token validation
+     */
     public function validateToken() {
         try {
             $token = $this->getBearerToken();
@@ -50,6 +66,10 @@ class Rest extends DB
         }
     }
 
+    /**
+     * Get user from Bearer Token
+     * @return bool
+     */
     public function user()
     {
         try {
@@ -71,21 +91,19 @@ class Rest extends DB
         }
     }
 
+    /**
+     * Find a specific user by id
+     * @param $id
+     * @return bool
+     */
     public function findUserById($id)
     {
-        try{
-            $sql= "SELECT * FROM users where id=:id";
-            $stmt = $this->conn->prepare($sql);
-            $stmt->bindParam(":id", $id);
-            $stmt->execute();
-            $user = $stmt->fetch(PDO::FETCH_ASSOC);
-            if(!is_array($user)){
-                return false;
-            }
-            return $user;
-        } catch (\PDOException $e) {
-            echo "Database Error: " . $e->getMessage();
-        }
+        $sql= "SELECT * FROM users where id=:id";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(":id", $id);
+        $stmt->execute();
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        return is_array($user) ? $user : false;
     }
 
 }

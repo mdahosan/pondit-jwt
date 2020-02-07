@@ -5,17 +5,15 @@ namespace Pondit\Auth;
 
 use Pondit\Database\DB;
 use Pondit\Response\Responsable;
+use PDO;
 
 class Register extends DB
 {
     use Responsable;
 
-    private $name;
-    private $mobileNumber;
-    private $email;
-    private $password;
+    private $conn, $name, $mobileNumber, $email, $password;
     private $isActive = true;
-    public $conn;
+    private $customField = null;
 
     /**
      * Register constructor.
@@ -48,6 +46,14 @@ class Register extends DB
             $this->password = $data['password'];
         }
 
+        if (array_key_exists('password', $data) && !is_null($data['password'])) {
+            $this->password = $data['password'];
+        }
+
+        if (array_key_exists('custom_field_1', $data) && !is_null($data['custom_field_1'])) {
+            $this->customField = $data['custom_field_1'];
+        }
+
         return $this;
     }
 
@@ -59,39 +65,26 @@ class Register extends DB
     {
         try{
 
-            $errors = \Pondit\Validation\Validator::validate([
-                [
-                    'name' => 'name',
-                    'value' => $_POST['name']??'',
-                    'rules' => 'required',
-                ],[
-                    'name' => 'email',
-                    'value' => $_POST['email']??'',
-                    'rules' => 'required|email',
-                ],[
-                    'name' => 'mobile_number',
-                    'value' => $_POST['mobile_number']??'',
-                    'rules' => 'required|numeric',
-                ],[
-                    'name' => 'password',
-                    'value' => $_POST['password']??'',
-                    'rules' => 'required',
-                ]
-            ]);
+            $errors = $this->validateRequest($data);
 
-            if(count($errors)>0){
-                $response = new \Pondit\Response\Response();
-                $response->throwError(VALIDATION_ERROR, $errors);
+            if($this->checkUserIsExist($_POST['email'])){
+                $errors['email'][] = $_POST['email']. ' has already been taken !';
             }
 
-            $sql = 'INSERT INTO users (id, name, mobile_number, email, password, is_active) VALUES(null, :name, :mobile_number, :email, :password, :is_active)';
+            if(count($errors)>0){
+                $this->throwError(VALIDATION_ERROR, $errors);
+            }
 
+            $sql = 'INSERT INTO users (id, name, mobile_number, email, password, is_active, custom_field_1) VALUES(null, :name, :mobile_number, :email, :password, :is_active, :custom_field_1)';
+
+            $hashedPwd = password_hash($this->password, PASSWORD_DEFAULT);
             $stmt = $this->conn->prepare($sql);
             $stmt->bindParam(':name', $this->name);
-            $stmt->bindParam(':mobile_number', $this->mobile_number);
+            $stmt->bindParam(':mobile_number', $this->mobileNumber);
             $stmt->bindParam(':email', $this->email);
-            $stmt->bindParam(':password', $this->password);
+            $stmt->bindParam(':password', $hashedPwd);
             $stmt->bindParam(':is_active', $this->isActive);
+            $stmt->bindParam(':custom_field_1', $this->customField);
 
             if($stmt->execute()) {
                 $this->returnResponse(SUCCESS_RESPONSE, 'Registration Successful.');
@@ -99,8 +92,50 @@ class Register extends DB
                 return false;
             }
         } catch (\Exception $e) {
-            $this->throwError(ACCESS_TOKEN_ERRORS, $e->getMessage());
+            $this->throwError(PDO_EXCEPTION, $e->getMessage());
         }
     }
+
+
+    /**
+     * Find a specific user by email
+     * @param $email
+     * @return bool
+     */
+    public function checkUserIsExist($email)
+    {
+        $sql= "SELECT * FROM users where email=:email";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(":email", $email);
+        $stmt->execute();
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($user) ? true : false;
+    }
+
+
+    public function validateRequest(array $data = [])
+    {
+        return \Pondit\Validation\Validator::validate([
+            [
+                'name' => 'name',
+                'value' => $_POST['name']??'',
+                'rules' => 'required',
+            ],[
+                'name' => 'email',
+                'value' => $_POST['email']??'',
+                'rules' => 'required|email',
+            ],[
+                'name' => 'mobile_number',
+                'value' => $_POST['mobile_number']??'',
+                'rules' => 'required|numeric',
+            ],[
+                'name' => 'password',
+                'value' => $_POST['password']??'',
+                'rules' => 'required',
+            ]
+        ]);
+    }
+
 
 }

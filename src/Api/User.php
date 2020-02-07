@@ -18,4 +18,5 @@ class User extends Rest
         $user = $this->user();
         return $this->returnResponse(SUCCESS_RESPONSE, $user);
     }
+
 }

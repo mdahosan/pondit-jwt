@@ -83,19 +83,19 @@ class TokenIssuer extends DB
     {
 
         try{
-            $sql= "SELECT * FROM users 
-                   where email=:emailInput
-                   and  password=:passwordInput";
-
+            $sql= "SELECT * FROM users where email=:emailInput";
             $stmt = $this->conn->prepare($sql);
             $stmt->bindParam(":emailInput", $data['email']);
-            $stmt->bindParam(":passwordInput", $data['password']);
+//            $stmt->bindParam(":passwordInput", $data['password']);
             $stmt->execute();
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
-            if(!is_array($user)){
-                return false;
+            if(is_array($user)){
+                if (password_verify($data['password'], $user['password'])) {
+                    return $user;
+                }
             }
-            return $user;
+            return false;
+
         } catch (\PDOException $e) {
             echo "Database Error: " . $e->getMessage();
         }

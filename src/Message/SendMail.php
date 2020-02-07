@@ -3,6 +3,7 @@
 namespace Pondit\Message;
 
 
+use Swift_Attachment;
 use Swift_Mailer;
 use Swift_Message;
 use Swift_SmtpTransport;
@@ -10,6 +11,12 @@ use Swift_SmtpTransport;
 class SendMail extends MessageSender
 {
 
+    private $email, $subject, $body, $attachmentPath = null;
+
+
+    /**
+     *
+     */
     public function send()
     {
         $data = $this->data;
@@ -44,7 +51,14 @@ class SendMail extends MessageSender
         }
 
         try{
-            $this->mailgunAPI($data['email'], $data['subject'], $data['body']);
+
+            $this->email = $data['email'];
+            $this->subject = $data['subject'];
+            $this->body = $data['body'];
+            $this->attachmentPath = $data['attachment_path'];
+//echo $this->attachmentPath;
+//die();
+            $this->mailgunAPI();
         }catch (\Exception $e){
             $this->throwError(MAILGUN_ERROR, $e->getMessage());
         }
@@ -52,7 +66,10 @@ class SendMail extends MessageSender
         return $this->returnResponse(SUCCESS_RESPONSE, 'Email sent successful.');
     }
 
-    private function mailgunAPI($email, $subject, $body)
+    /**
+     *
+     */
+    private function mailgunAPI()
     {
         // Create the Transport
         $transport = new Swift_SmtpTransport('smtp.mailgun.org', 25, '');
@@ -61,10 +78,26 @@ class SendMail extends MessageSender
         // Create the Mailer using your created Transport
         $mailer = new Swift_Mailer($transport);
         // Create a message
-        $message = new Swift_Message($subject);
+        $message = new Swift_Message($this->subject);
+
+        /*
+         * For attachment
+         * */
+        if(!is_null($this->attachmentPath)){
+            $explodedAttachments = explode('>', $this->attachmentPath);
+            foreach ($explodedAttachments as $attachment){
+                $explodedAttachmentPath = explode("/", $attachment);
+                $attachmentName = end($explodedAttachmentPath);
+//            'file:///C:/Users/Pondit/Desktop/abc.PNG'
+                $message->attach(
+                    Swift_Attachment::fromPath($attachment)->setFilename($attachmentName)
+                );
+            }
+        }
+
          $message->setFrom(array(MAIL_FROM_ADDRESS => MAIL_FROM_NAME))
-            ->setTo(array($email))
-            ->setBody($body);
+            ->setTo(array($this->email))
+            ->setBody($this->body);
         // Send the message
         $mailer->send($message);
     }
