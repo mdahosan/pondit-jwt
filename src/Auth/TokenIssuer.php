@@ -33,12 +33,12 @@ class TokenIssuer extends DB
 
             $errors = \Pondit\Validation\Validator::validate([
                 [
-                    'name' => 'email',
-                    'value' => $_POST['email']??'',
-                    'rules' => 'required|email',
+                    'name' => 'email_or_mobile',
+                    'value' => $data['email_or_mobile']??'',
+                    'rules' => 'required',
                 ],[
                     'name' => 'password',
-                    'value' => $_POST['password']??'',
+                    'value' => $data['password']??'',
                     'rules' => 'required',
                 ]
             ]);
@@ -70,7 +70,11 @@ class TokenIssuer extends DB
             $data = [
                 'token' => $token,
                 'issue_at' => $payload['iat'],
-                'expiration_at' =>$payload['exp']
+                'expiration_at' =>$payload['exp'],
+                'user' => [
+                    'name'=>$user['name'],
+                    'email'=>$user['email'],
+                    ]
             ];
 
             $this->returnResponse(SUCCESS_RESPONSE, $data);
@@ -83,16 +87,24 @@ class TokenIssuer extends DB
     {
 
         try{
-            $sql= "SELECT * FROM users where email=:emailInput";
+            $hashedPwd = password_hash($data['password'], PASSWORD_DEFAULT);
+
+            $sql= "SELECT * 
+                    FROM users 
+                    where email=:emailInput 
+                    or mobile_number=:mobileInput";
+
             $stmt = $this->conn->prepare($sql);
-            $stmt->bindParam(":emailInput", $data['email']);
-//            $stmt->bindParam(":passwordInput", $data['password']);
+            $stmt->bindParam(":emailInput", $data['email_or_mobile']);
+            $stmt->bindParam(":mobileInput", $data['email_or_mobile']);
+//            $stmt->bindParam(":passwordInput", $hashedPwd);
             $stmt->execute();
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
             if(is_array($user)){
                 if (password_verify($data['password'], $user['password'])) {
                     return $user;
                 }
+                return false;
             }
             return false;
 

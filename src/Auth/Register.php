@@ -11,7 +11,11 @@ class Register extends DB
 {
     use Responsable;
 
-    private $conn, $name, $mobileNumber, $email, $password;
+    private $conn;
+    private $name;
+    private $mobileNumber;
+    private $email;
+    private $password;
     private $isActive = true;
     private $customField = null;
 
