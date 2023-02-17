@@ -23,7 +23,7 @@
   },
   "require": {
     "php": "^7.2",
-    "firebase/php-jwt": "^5.0",
+    "firebase/php-jwt": "^5.0 || ^6.0",
     "swiftmailer/swiftmailer": "@stable"
   }
 }
